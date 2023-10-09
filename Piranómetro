@@ -1,0 +1,37 @@
+float lectura_A0;
+float volt_A0;
+float irradiancia_A0;
+
+float lectura_A1;
+float volt_A1;
+float irradiancia_A1;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
+}
+
+void loop() {
+  // Lectura y cálculos para el pin A0
+  lectura_A0 = analogRead(A0);
+  volt_A0 = lectura_A0 / 1023.0 * 5.0;
+  irradiancia_A0 = map(volt_A0 * 1000, 0, 3000, 0, 1800);
+
+  // Lectura y cálculos para el pin A1
+  lectura_A1 = analogRead(A1);
+  volt_A1 = lectura_A1 / 1023.0 * 5.0;
+  irradiancia_A1 = map(volt_A1 * 1000, 0, 3000, 0, 1800);
+
+
+  Serial.print(" Piranómetro 1:  ");
+  Serial.print(irradiancia_A0);
+  Serial.println(" W/m2");
+
+ 
+  Serial.print(" Piranómetro 2:  ");
+  Serial.print(irradiancia_A1);
+  Serial.println(" W/m2");
+
+  delay(60000); // 
+}
