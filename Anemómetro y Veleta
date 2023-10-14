@@ -26,8 +26,9 @@ void loop() {
   velocidadMPH = contadorPulsos * (2.25 / T);
 
   // Muestra la velocidad en millas por hora en el monitor serial
-  Serial.print("Velocidad (mph): ");
-  Serial.println(velocidadMPH);
+  Serial.print("Velocidad (m/s): ");
+  float velocidadMPS = velocidadMPH * 0.44704;
+  Serial.println(velocidadMPS, 2);
 
   // Reinicia el contador de pulsos
   contadorPulsos = 0;
