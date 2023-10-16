@@ -9,13 +9,13 @@ float Tension_de_trabajo = 5.0; // VCC
 float Voltaje_R2_1; // Valor calculado para el pin A3
 float Voltaje_R2_2; // Valor calculado para el pin A4
 float Voltaje_R2_3; // Valor calculado para el pin A5
-float Resistencia_1; // Valor calculado para el pin A3
-float Resistencia_2; // Valor calculado para el pin A4
-float Resistencia_3; // Valor calculado para el pin A5
+float GradosCelsius_1; // Valor calculado en grados Celsius para el pin A3
+float GradosCelsius_2; // Valor calculado en grados Celsius para el pin A4
+float GradosCelsius_3; // Valor calculado en grados Celsius para el pin A5
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("Medición de resistencia:");
+  Serial.println("Medición de temperatura en grados Celsius:");
   Serial.println();
 }
 
@@ -27,20 +27,13 @@ void loop() {
   }
   lectura_1 = trunc(lectura_1 / 5);
 
-  // Calculamos el voltaje en la resistencia desconocida en el pin A3
-  Voltaje_R2_1 = (Tension_de_trabajo / 1023.0) * lectura_1;
+  // Calculamos los grados Celsius en el pin A3 con la relación lineal
+  GradosCelsius_1 = (lectura_1 * 27.0) / 112.0;
 
   // Lo imprimimos en el Monitor Serie para el pin A3
-  Serial.print("Voltaje en R2 (A3): ");
-  Serial.print(Voltaje_R2_1, 2);
-  Serial.println(" Voltios");
-
-  // Calculamos la resistencia desconocida en el pin A3 con las fórmulas
-  Resistencia_1 = R1 * Voltaje_R2_1 / (Tension_de_trabajo - Voltaje_R2_1);
-  Serial.print("La resistencia (A3) tiene ");
-  Serial.print(Resistencia_1, 2);
-  Serial.println(" Ohm.");
-  Serial.println();
+  Serial.print("Temperatura (A3): ");
+  Serial.print(GradosCelsius_1, 2);
+  Serial.println(" °C");
 
   // Leemos el valor en el pin A4
   lectura_2 = 0;
@@ -49,20 +42,13 @@ void loop() {
   }
   lectura_2 = trunc(lectura_2 / 5);
 
-  // Calculamos el voltaje en la resistencia desconocida en el pin A4
-  Voltaje_R2_2 = (Tension_de_trabajo / 1023.0) * lectura_2;
+  // Calculamos los grados Celsius en el pin A4 con la relación lineal
+  GradosCelsius_2 = (lectura_2 * 27.0) / 112.0;
 
   // Lo imprimimos en el Monitor Serie para el pin A4
-  Serial.print("Voltaje en R2 (A4): ");
-  Serial.print(Voltaje_R2_2, 2);
-  Serial.println(" Voltios");
-
-  // Calculamos la resistencia desconocida en el pin A4 con las fórmulas
-  Resistencia_2 = R1 * Voltaje_R2_2 / (Tension_de_trabajo - Voltaje_R2_2);
-  Serial.print("La resistencia (A4) tiene ");
-  Serial.print(Resistencia_2, 2);
-  Serial.println(" Ohm.");
-  Serial.println();
+  Serial.print("Temperatura (A4): ");
+  Serial.print(GradosCelsius_2, 2);
+  Serial.println(" °C");
 
   // Leemos el valor en el pin A5
   lectura_3 = 0;
@@ -71,20 +57,13 @@ void loop() {
   }
   lectura_3 = trunc(lectura_3 / 5);
 
-  // Calculamos el voltaje en la resistencia desconocida en el pin A5
-  Voltaje_R2_3 = (Tension_de_trabajo / 1023.0) * lectura_3;
+  // Calculamos los grados Celsius en el pin A5 con la relación lineal
+  GradosCelsius_3 = (lectura_3 * 27.0) / 112.0;
 
   // Lo imprimimos en el Monitor Serie para el pin A5
-  Serial.print("Voltaje en R2 (A5): ");
-  Serial.print(Voltaje_R2_3, 2);
-  Serial.println(" Voltios");
+  Serial.print("Temperatura (A5): ");
+  Serial.print(GradosCelsius_3, 2);
+  Serial.println(" °C");
 
-  // Calculamos la resistencia desconocida en el pin A5 con las fórmulas
-  Resistencia_3 = R1 * Voltaje_R2_3 / (Tension_de_trabajo - Voltaje_R2_3);
-  Serial.print("La resistencia (A5) tiene ");
-  Serial.print(Resistencia_3, 2);
-  Serial.println(" Ohm.");
-  Serial.println();
-
-  delay(5000);
+  delay(60000);
 }
