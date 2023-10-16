@@ -3,11 +3,12 @@ int pinPulsos = 2; // Pin digital donde se conecta el cable negro
 float velocidadMPH; // Variable para almacenar la velocidad en millas por hora
 
 int Pin_de_medicion = A2; // Pin analógico A2
-int R1 = 10000; // Cambiar por el valor de la resistencia conocida (Resistencia de calibración)
+int R1 = 20000; // Cambiar por el valor de la resistencia conocida (Resistencia de calibración) - rango de 0 a 20k ohms
 long lectura; // Lectura en el pin analógico A2
 float Tension_de_trabajo = 5.0; // VCC 
 float Voltaje_R2; // Valor que calculamos
 float Resistencia; // Valor que calculamos
+float Angulo; // Valor calculado en grados
 
 void setup() {
   pinMode(pinPulsos, INPUT_PULLUP); // Configura el pin de pulsos como entrada con resistencia pull-up
@@ -21,13 +22,13 @@ void loop() {
   // Medición de velocidad
   delay(60000); // Espera 60 segundos para medir la velocidad
   
-  // Calcula la velocidad en millas por hora usando la fórmula
+  // Calcula la velocidad en metros por segundo usando la fórmula
   float T = 60.0; // Período de muestreo en segundos (60 segundos en este caso)
   velocidadMPH = contadorPulsos * (2.25 / T);
+  float velocidadMPS = velocidadMPH * 0.44704; // Conversión a m/s
 
-  // Muestra la velocidad en millas por hora en el monitor serial
+  // Muestra la velocidad en el Monitor Serie
   Serial.print("Velocidad (m/s): ");
-  float velocidadMPS = velocidadMPH * 0.44704;
   Serial.println(velocidadMPS, 2);
 
   // Reinicia el contador de pulsos
@@ -38,24 +39,22 @@ void loop() {
   for (int i = 0; i < 5; i++) {
     lectura += analogRead(Pin_de_medicion);
   }
-  lectura = trunc(lectura / 5);
+  lectura = constrain(lectura, 0, 1023); // Limita la lectura al rango 0-1023
 
   // Calculamos el voltaje en la resistencia desconocida
   Voltaje_R2 = (Tension_de_trabajo / 1023.0) * lectura;
 
-  // Lo imprimimos en el Monitor Serie
-  Serial.print("Voltaje en R2: ");
-  Serial.print(Voltaje_R2, 2);
-  Serial.println(" Voltios");
-
   // Calculamos la resistencia desconocida con las fórmulas
-  // (V1/R1=V2/R2) y (V1=+5V-V2)
   Resistencia = R1 * Voltaje_R2 / (Tension_de_trabajo - Voltaje_R2);
-  Serial.print("La resistencia tiene ");
-  Serial.print(Resistencia, 2);
-  Serial.println(" Ohm.");
-  Serial.println();
-  
+
+  // Calculamos el ángulo en grados linealmente en función de la resistencia
+  Angulo = (360.0 / 20000.0) * Resistencia;
+
+  // Lo imprimimos en el Monitor Serie
+  Serial.print("Ángulo (grados): ");
+  Serial.print(Angulo, 2);
+  Serial.println(" °");
+
   delay(60000); // Espera 60 segundos antes de la siguiente medición
 }
 
