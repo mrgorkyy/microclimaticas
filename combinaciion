@@ -1,0 +1,201 @@
+const float MPH_TO_MPS = 0.44704; // Constante de conversión de mph a m/s
+
+float lectura_A0;
+float volt_A0;
+float irradiancia_A0;
+
+float lectura_A1;
+float volt_A1;
+float irradiancia_A1;
+
+volatile int contadorPulsos = 0; // Variable para contar los pulsos
+int pinPulsos = 2; // Pin digital donde se conecta el cable negro
+float velocidadMPH; // Variable para almacenar la velocidad en millas por hora
+
+int Pin_de_medicion = A2; // Pin analógico A2
+int R1 = 10000; // Cambiar por el valor de la resistencia conocida (Resistencia de calibración)
+long lectura; // Lectura en el pin analógico A2
+float Tension_de_trabajo = 5.0; // VCC 
+float Voltaje_R2; // Valor que calculamos
+float Resistencia; // Valor que calculamos
+float Angulo; // Valor del ángulo calculado
+
+int Pin_de_medicion_1 = A3; // Pin analógico A3
+int Pin_de_medicion_2 = A4; // Pin analógico A4
+int Pin_de_medicion_3 = A5; // Pin analógico A5
+int R1_2 = 100; // Cambiar por el valor de la resistencia conocida (Resistencia de calibración)
+long lectura_1; // Lectura en el pin analógico A3
+long lectura_2; // Lectura en el pin analógico A4
+long lectura_3; // Lectura en el pin analógico A5
+float Voltaje_R2_1; // Valor calculado para el pin A3
+float Voltaje_R2_2; // Valor calculado para el pin A4
+float Voltaje_R2_3; // Valor calculado para el pin A5
+float Resistencia_1; // Valor calculado para el pin A3
+float Resistencia_2; // Valor calculado para el pin A4
+float Resistencia_3; // Valor calculado para el pin A5
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
+  pinMode(pinPulsos, INPUT_PULLUP); // Configura el pin de pulsos como entrada con resistencia pull-up
+  attachInterrupt(digitalPinToInterrupt(pinPulsos), contarPulso, RISING); // Configura la interrupción en el flanco de subida
+  //Serial.println("Medición de resistencia, velocidad e irradiancia:");
+  //Serial.println();
+}
+
+void loop() {
+  // Medición de irradiancia para A0
+  lectura_A0 = analogRead(A0);
+  volt_A0 = lectura_A0 / 1023.0 * 5.0;
+  irradiancia_A0 = map(volt_A0 * 1000, 0, 3000, 0, 1800);
+
+  // Medición de irradiancia para A1
+  lectura_A1 = analogRead(A1);
+  volt_A1 = lectura_A1 / 1023.0 * 5.0;
+  irradiancia_A1 = map(volt_A1 * 1000, 0, 3000, 0, 1800);
+
+  //Serial.print("Piranómetro 1: ");
+ 
+  //Serial.println(" W/m2");
+
+  //Serial.print("Piranómetro 2: ");
+  
+  //Serial.println(" W/m2");
+
+  // Medición de velocidad
+  delay(6000); // Espera 60 segundos para medir la velocidad
+  
+  // Calcula la velocidad en millas por hora usando la fórmula
+  float T = 60.0; // Período de muestreo en segundos (60 segundos en este caso)
+  velocidadMPH = contadorPulsos * (2.25 / T);
+
+  //Serial.print("Velocidad (mph): ");
+  //Serial.println(velocidadMPH);
+  //Serial.print(",");
+
+  // Convierte la velocidad de mph a m/s
+  float velocidadMPS = velocidadMPH * MPH_TO_MPS;
+
+  //Serial.print("Velocidad : ");
+
+  
+  // Reinicia el contador de pulsos
+  contadorPulsos = 0;
+
+  // Medición de resistencia
+  lectura = 0;
+  for (int i = 0; i < 5; i++) {
+    lectura += analogRead(Pin_de_medicion);
+  }
+  lectura = trunc(lectura / 5);
+
+  // Calculamos el voltaje en la resistencia desconocida
+  Voltaje_R2 = (Tension_de_trabajo / 1023.0) * lectura;
+
+  // Calculamos la resistencia desconocida con las fórmulas
+  // (V1/R1=V2/R2) y (V1=+5V-V2)
+  Resistencia = R1 * Voltaje_R2 / (Tension_de_trabajo - Voltaje_R2);
+
+  // Limita la resistencia a un máximo de 20k ohmios
+  if (Resistencia > 20000.0) {
+    Resistencia = 20000.0;
+  }
+
+  //Serial.print(Resistencia, 2);
+  //Serial.print(",");
+  
+  //Serial.println(" Ohm.");
+  
+  // Mapea la resistencia al rango de 0 a 360 grados
+  Angulo = map(Resistencia, 0, 20000, 0, 360);
+  //Serial.print("Ángulo (grados): ");
+ 
+  //Serial.println();
+  
+  // Leemos el valor en el pin A3
+  lectura_1 = 0;
+  for (int i = 0; i < 5; i++) {
+    lectura_1 += analogRead(Pin_de_medicion_1);
+  }
+  lectura_1 = trunc(lectura_1 / 5);
+
+  // Calculamos el voltaje en la resistencia desconocida en el pin A3
+  Voltaje_R2_1 = (Tension_de_trabajo / 1023.0) * lectura_1;
+
+  // Lo imprimimos en el Monitor Serie para el pin A3
+  //Serial.print("Voltaje en R2 (A3): ");
+  //Serial.print(Voltaje_R2_1, 2);
+ // Serial.println(" Voltios");
+
+  // Calculamos la resistencia desconocida en el pin A3 con las fórmulas
+  Resistencia_1 = R1_2 * Voltaje_R2_1 / (Tension_de_trabajo - Voltaje_R2_1);
+  //Serial.print("La resistencia (A3) tiene ");
+ 
+  //Serial.println(" Ohm.");
+  //Serial.println();
+
+  // Leemos el valor en el pin A4
+  lectura_2 = 0;
+  for (int i = 0; i < 5; i++) {
+    lectura_2 += analogRead(Pin_de_medicion_2);
+  }
+  lectura_2 = trunc(lectura_2 / 5);
+
+  // Calculamos el voltaje en la resistencia desconocida en el pin A4
+  Voltaje_R2_2 = (Tension_de_trabajo / 1023.0) * lectura_2;
+
+  // Lo imprimimos en el Monitor Serie para el pin A4
+  //Serial.print("Voltaje en R2 (A4): ");
+ // Serial.print(Voltaje_R2_2, 2);
+ // Serial.println(" Voltios");
+
+  // Calculamos la resistencia desconocida en el pin A4 con las fórmulas
+  Resistencia_2 = R1_2 * Voltaje_R2_2 / (Tension_de_trabajo - Voltaje_R2_2);
+  //Serial.print("La resistencia (A4) tiene ");
+  
+  //Serial.println(" Ohm.");
+  //Serial.println();
+
+  // Leemos el valor en el pin A5
+  lectura_3 = 0;
+  for (int i = 0; i < 5; i++) {
+    lectura_3 += analogRead(Pin_de_medicion_3);
+  }
+  lectura_3 = trunc(lectura_3 / 5);
+
+  // Calculamos el voltaje en la resistencia desconocida en el pin A5
+  Voltaje_R2_3 = (Tension_de_trabajo / 1023.0) * lectura_3;
+
+  // Lo imprimimos en el Monitor Serie para el pin A5
+ // Serial.print("Voltaje en R2 (A5): ");
+  //Serial.print(Voltaje_R2_3, 2);
+  //Serial.println(" Voltios");
+
+  // Calculamos la resistencia desconocida en el pin A5 con las fórmulas
+  Resistencia_3 = R1_2 * Voltaje_R2_3 / (Tension_de_trabajo - Voltaje_R2_3);
+  //Serial.print("La resistencia (A5) tiene ");
+  
+  //Serial.println(" Ohm.");
+  //erial.println();
+Serial.print(irradiancia_A0);
+Serial.print(", ");  // Agrega una coma y un espacio
+Serial.print(irradiancia_A1);
+Serial.print(", ");  // Agrega una coma y un espacio
+Serial.print(velocidadMPS);
+Serial.print(", ");  // Agrega una coma y un espacio
+Serial.print(Angulo);
+Serial.print(", ");  // Agrega una coma y un espacio
+Serial.print(Resistencia_1, 2);
+Serial.print(", ");  // Agrega una coma y un espacio
+Serial.print(Resistencia_2, 2);
+Serial.print(", ");  // Agrega una coma y un espacio
+Serial.print(Resistencia_3, 2);
+Serial.println();    // Agrega un salto de línea al final
+
+  delay(6000); // Espera 60 segundos antes de la siguiente medición
+}
+
+void contarPulso() {
+  contadorPulsos++; // Incrementa el contador de pulsos cuando se produce una interrupción
+}
