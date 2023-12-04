@@ -1,0 +1,39 @@
+int Pin_de_medicion = A2; // Pin analógico A2
+int R1 = 10000; // Cambiar por el valor de la resistencia conocida (Resistencia de calibración)
+long lectura; // Lectura en el pin analógico A2
+float Tension_de_trabajo = 5.0; // VCC 
+float Voltaje_R2; // Valor que calculamos
+float Resistencia; // Valor que calculamos
+float Angulo; // Valor del ángulo calculado
+
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  // Medición en el pin A2
+  lectura = 0;
+  for (int i = 0; i < 5; i++) {
+    lectura += analogRead(Pin_de_medicion);
+  }
+  lectura = trunc(lectura / 5);
+
+  // Calculamos el voltaje en la resistencia desconocida en el pin A2
+  Voltaje_R2 = (Tension_de_trabajo / 1023.0) * lectura;
+
+  // Calculamos la resistencia desconocida con las fórmulas
+  Resistencia = R1 * Voltaje_R2 / (Tension_de_trabajo - Voltaje_R2);
+
+  // Limita la resistencia a un máximo de 20k ohmios
+  if (Resistencia > 23000.0) {
+    Resistencia = 23000.0;
+  }
+
+  // Mapea la resistencia al rango de 0 a 360 grados
+  Angulo = map(Resistencia, 0, 23000, 0, 360);
+
+  // Imprime solo el valor del ángulo
+  Serial.print("Angulo: ");
+  Serial.println(Angulo);
+  delay(60000); // Espera 1 segundo entre cada impresión (ajusta según sea necesario)
+}
