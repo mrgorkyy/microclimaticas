@@ -24,11 +24,11 @@ void loop() {
   irradiancia_A1 = map(volt_A1 * 1000, 0, 3000, 0, 1800); // 
 
   // Comunicación serie para enviar los datos al monitor serie
-  Serial.print(" Piranómetro 1:  ");
+  Serial.print(" Irradiancia Panel FV :  ");
   Serial.print(irradiancia_A0);
   Serial.println(" W/m2");
 
-  Serial.print(" Piranómetro 2:  ");
+  Serial.print(" Irradiancia Global Horizontal:  ");
   Serial.print(irradiancia_A1);
   Serial.println(" W/m2");
 
