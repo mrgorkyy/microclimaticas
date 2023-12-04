@@ -16,47 +16,45 @@ void setup(void) {
 void loop(void) {
   for (int i = 0; i < numSensors; i++) {
     float temperature = getTemp(i);
-    Serial.print("Sensor ");
-    Serial.print(i + 1);
-    Serial.print(": ");
-    Serial.println(temperature);
+    Serial.print(temperature);
+    if (i < numSensors - 1) {
+      Serial.print(", ");
+    }
   }
 
-  delay(60000); // Solo para ralentizar la salida y hacerla más fácil de leer
+  Serial.println(); // Nueva línea para la siguiente iteración
+
+  delay(6000); // Solo para ralentizar la salida y hacerla más fácil de leer
 }
 
 float getTemp(int sensorIndex) {
-  // Devuelve la temperatura de un DS18S20 en grados Celsius
+  // Resto del código para la lectura de la temperatura de los sensores DS18S20
 
   byte data[12];
   byte addr[8];
 
   if (!ds[sensorIndex].search(addr)) {
-    // No hay más sensores en la cadena, reinicia la búsqueda
-    //Serial.println("No hay más sensores en la cadena, reinicia la búsqueda");
     ds[sensorIndex].reset_search();
     return -1000;
   }
 
   if (OneWire::crc8(addr, 7) != addr[7]) {
-    Serial.println("CRC no es válido!");
     return -1000;
   }
 
   if (addr[0] != 0x10 && addr[0] != 0x28) {
-    Serial.print("El dispositivo no es reconocido");
     return -1000;
   }
 
   ds[sensorIndex].reset();
   ds[sensorIndex].select(addr);
-  ds[sensorIndex].write(0x44, 1); // Iniciar la conversión, con alimentación parásita al final
+  ds[sensorIndex].write(0x44, 1);
 
   byte present = ds[sensorIndex].reset();
   ds[sensorIndex].select(addr);
-  ds[sensorIndex].write(0xBE); // Leer Scratchpad
+  ds[sensorIndex].write(0xBE);
 
-  for (int i = 0; i < 9; i++) { // Necesitamos 9 bytes
+  for (int i = 0; i < 9; i++) {
     data[i] = ds[sensorIndex].read();
   }
 
@@ -65,7 +63,7 @@ float getTemp(int sensorIndex) {
   byte MSB = data[1];
   byte LSB = data[0];
 
-  float tempRead = ((MSB << 8) | LSB); // Usando complemento a dos
+  float tempRead = ((MSB << 8) | LSB);
   float TemperatureSum = tempRead / 16;
 
   return TemperatureSum;
