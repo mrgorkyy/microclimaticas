@@ -9,7 +9,7 @@ float volt_A1;
 float irradiancia_A1;
 
 volatile int contadorPulsos = 0; // Variable para contar los pulsos
-int pinPulsos = 2; // Pin digital donde se conecta el cable negro
+int pinPulsos = 2; // Pin digital 
 float velocidadMPH; // Variable para almacenar la velocidad en millas por hora
 
 int Pin_de_medicion = A2; // Pin analógico A2
@@ -23,7 +23,7 @@ float Angulo; // Valor del ángulo calculado
 int Pin_de_medicion_1 = A3; // Pin analógico A3
 int Pin_de_medicion_2 = A4; // Pin analógico A4
 int Pin_de_medicion_3 = A5; // Pin analógico A5
-int R1_2 = 100; // Cambiar por el valor de la resistencia conocida (Resistencia de calibración)
+int R1_2 = 1000; // Cambiar por el valor de la resistencia conocida (Resistencia de calibración)
 long lectura_1; // Lectura en el pin analógico A3
 long lectura_2; // Lectura en el pin analógico A4
 long lectura_3; // Lectura en el pin analógico A5
@@ -34,14 +34,31 @@ float Resistencia_1; // Valor calculado para el pin A3
 float Resistencia_2; // Valor calculado para el pin A4
 float Resistencia_3; // Valor calculado para el pin A5
 
+// Variables para la conversión de resistencia a temperatura
+// Curva para A3
+const float res1_A3 = 123.3;
+const float temp1_A3 = 56.1;
+const float res2_A3 = 112.7;
+const float temp2_A3 = 34.4;
+
+// Curva para A4
+const float res1_A4 = 140.5;
+const float temp1_A4 = 56.1;
+const float res2_A4 = 112.7;
+const float temp2_A4 = 34.4;
+
+// Curva para A5
+const float res1_A5 = 140.57;
+const float temp1_A5 = 38.00;
+const float res2_A5 = 116.81;
+const float temp2_A5 = 25.00;
+
 void setup() {
   Serial.begin(9600);
   pinMode(A0, INPUT);
   pinMode(A1, INPUT);
   pinMode(pinPulsos, INPUT_PULLUP); // Configura el pin de pulsos como entrada con resistencia pull-up
   attachInterrupt(digitalPinToInterrupt(pinPulsos), contarPulso, RISING); // Configura la interrupción en el flanco de subida
-  //Serial.println("Medición de resistencia, velocidad e irradiancia:");
-  //Serial.println();
 }
 
 void loop() {
@@ -55,65 +72,41 @@ void loop() {
   volt_A1 = lectura_A1 / 1023.0 * 5.0;
   irradiancia_A1 = map(volt_A1 * 1000, 0, 3000, 0, 1800);
 
-  //Serial.print("Piranómetro 1: ");
- 
-  //Serial.println(" W/m2");
-
-  //Serial.print("Piranómetro 2: ");
-  
-  //Serial.println(" W/m2");
-
   // Medición de velocidad
-  delay(6000); // Espera 60 segundos para medir la velocidad
-  
+  delay(60000); // Espera 60 segundos para medir la velocidad
+
   // Calcula la velocidad en millas por hora usando la fórmula
   float T = 60.0; // Período de muestreo en segundos (60 segundos en este caso)
   velocidadMPH = contadorPulsos * (2.25 / T);
 
-  //Serial.print("Velocidad (mph): ");
-  //Serial.println(velocidadMPH);
-  //Serial.print(",");
+  // Convierte la velocidad de mph a m/s y multiplica por 10
+  float velocidadMPSx10 = velocidadMPH * MPH_TO_MPS * 10;
 
-  // Convierte la velocidad de mph a m/s
-  float velocidadMPS = velocidadMPH * MPH_TO_MPS;
-
-  //Serial.print("Velocidad : ");
-
-  
   // Reinicia el contador de pulsos
   contadorPulsos = 0;
 
-  // Medición de resistencia
+  // Medición en el pin A2
   lectura = 0;
   for (int i = 0; i < 5; i++) {
     lectura += analogRead(Pin_de_medicion);
   }
   lectura = trunc(lectura / 5);
 
-  // Calculamos el voltaje en la resistencia desconocida
+  // Calculamos el voltaje en la resistencia desconocida en el pin A2
   Voltaje_R2 = (Tension_de_trabajo / 1023.0) * lectura;
 
   // Calculamos la resistencia desconocida con las fórmulas
-  // (V1/R1=V2/R2) y (V1=+5V-V2)
   Resistencia = R1 * Voltaje_R2 / (Tension_de_trabajo - Voltaje_R2);
 
   // Limita la resistencia a un máximo de 20k ohmios
-  if (Resistencia > 20000.0) {
-    Resistencia = 20000.0;
+  if (Resistencia > 23000.0) {
+    Resistencia = 23000.0;
   }
 
-  //Serial.print(Resistencia, 2);
-  //Serial.print(",");
-  
-  //Serial.println(" Ohm.");
-  
   // Mapea la resistencia al rango de 0 a 360 grados
-  Angulo = map(Resistencia, 0, 20000, 0, 360);
-  //Serial.print("Ángulo (grados): ");
- 
-  //Serial.println();
-  
-  // Leemos el valor en el pin A3
+  Angulo = map(Resistencia, 0, 23000, 0, 360);
+
+  // Medición de temperatura para A3
   lectura_1 = 0;
   for (int i = 0; i < 5; i++) {
     lectura_1 += analogRead(Pin_de_medicion_1);
@@ -123,19 +116,11 @@ void loop() {
   // Calculamos el voltaje en la resistencia desconocida en el pin A3
   Voltaje_R2_1 = (Tension_de_trabajo / 1023.0) * lectura_1;
 
-  // Lo imprimimos en el Monitor Serie para el pin A3
-  //Serial.print("Voltaje en R2 (A3): ");
-  //Serial.print(Voltaje_R2_1, 2);
- // Serial.println(" Voltios");
-
   // Calculamos la resistencia desconocida en el pin A3 con las fórmulas
   Resistencia_1 = R1_2 * Voltaje_R2_1 / (Tension_de_trabajo - Voltaje_R2_1);
-  //Serial.print("La resistencia (A3) tiene ");
- 
-  //Serial.println(" Ohm.");
-  //Serial.println();
+  float temperatura_1_A3 = map(Resistencia_1, res1_A3, res2_A3, temp1_A3, temp2_A3); // Convertimos resistencia a temperatura
 
-  // Leemos el valor en el pin A4
+  // Medición de temperatura para A4
   lectura_2 = 0;
   for (int i = 0; i < 5; i++) {
     lectura_2 += analogRead(Pin_de_medicion_2);
@@ -145,19 +130,11 @@ void loop() {
   // Calculamos el voltaje en la resistencia desconocida en el pin A4
   Voltaje_R2_2 = (Tension_de_trabajo / 1023.0) * lectura_2;
 
-  // Lo imprimimos en el Monitor Serie para el pin A4
-  //Serial.print("Voltaje en R2 (A4): ");
- // Serial.print(Voltaje_R2_2, 2);
- // Serial.println(" Voltios");
-
   // Calculamos la resistencia desconocida en el pin A4 con las fórmulas
   Resistencia_2 = R1_2 * Voltaje_R2_2 / (Tension_de_trabajo - Voltaje_R2_2);
-  //Serial.print("La resistencia (A4) tiene ");
-  
-  //Serial.println(" Ohm.");
-  //Serial.println();
+  float temperatura_2_A4 = map(Resistencia_2, res1_A4, res2_A4, temp1_A4, temp2_A4); // Convertimos resistencia a temperatura
 
-  // Leemos el valor en el pin A5
+  // Medición de temperatura para A5
   lectura_3 = 0;
   for (int i = 0; i < 5; i++) {
     lectura_3 += analogRead(Pin_de_medicion_3);
@@ -167,35 +144,28 @@ void loop() {
   // Calculamos el voltaje en la resistencia desconocida en el pin A5
   Voltaje_R2_3 = (Tension_de_trabajo / 1023.0) * lectura_3;
 
-  // Lo imprimimos en el Monitor Serie para el pin A5
- // Serial.print("Voltaje en R2 (A5): ");
-  //Serial.print(Voltaje_R2_3, 2);
-  //Serial.println(" Voltios");
-
   // Calculamos la resistencia desconocida en el pin A5 con las fórmulas
   Resistencia_3 = R1_2 * Voltaje_R2_3 / (Tension_de_trabajo - Voltaje_R2_3);
-  //Serial.print("La resistencia (A5) tiene ");
-  
-  //Serial.println(" Ohm.");
-  //erial.println();
-Serial.print(irradiancia_A0);
-Serial.print(", ");  // Agrega una coma y un espacio
-Serial.print(irradiancia_A1);
-Serial.print(", ");  // Agrega una coma y un espacio
-Serial.print(velocidadMPS);
-Serial.print(", ");  // Agrega una coma y un espacio
-Serial.print(Angulo);
-Serial.print(", ");  // Agrega una coma y un espacio
-Serial.print(Resistencia_1, 2);
-Serial.print(", ");  // Agrega una coma y un espacio
-Serial.print(Resistencia_2, 2);
-Serial.print(", ");  // Agrega una coma y un espacio
-Serial.print(Resistencia_3, 2);
-Serial.println();    // Agrega un salto de línea al final
+  float temperatura_3_A5 = map(Resistencia_3, res1_A5, res2_A5, temp1_A5, temp2_A5); // Convertimos resistencia a temperatura
 
-  delay(6000); // Espera 60 segundos antes de la siguiente medición
+  // Envía los datos a la computadora
+  Serial.print(irradiancia_A0);// piranometro 1 panel fv
+  Serial.print(",");
+  Serial.print(irradiancia_A1);
+  Serial.print(",");
+  Serial.print(velocidadMPSx10); // Velocidad en unidades de 10 m/s
+  Serial.print(",");
+  Serial.print(Angulo);
+  Serial.print(",");
+  Serial.print(temperatura_1_A3);
+  Serial.print(",");
+  Serial.print(temperatura_2_A4);
+  Serial.print(",");
+  Serial.print(temperatura_3_A5);
+  Serial.println();    // Agrega un salto de línea al final
 }
 
+// Función de interrupción para contar pulsos
 void contarPulso() {
-  contadorPulsos++; // Incrementa el contador de pulsos cuando se produce una interrupción
+  contadorPulsos++; // Incrementa el contador de pulsos
 }
