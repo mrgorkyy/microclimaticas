@@ -1,0 +1,90 @@
+#include <OneWire.h>
+
+// Define los pines para los sensores DS18S20
+int DS18S20_Pins[] = {2, 3, 4};
+
+// Número de sensores
+int numSensors = sizeof(DS18S20_Pins) / sizeof(DS18S20_Pins[0]);
+
+// Arreglo de instancias de OneWire para cada sensor
+OneWire ds[] = {OneWire(DS18S20_Pins[0]), OneWire(DS18S20_Pins[1]), OneWire(DS18S20_Pins[2])};
+
+int Pin_de_medicion = A2; // Pin analógico A2
+int R1 = 10000; // Cambiar por el valor de la resistencia conocida (Resistencia de calibración)
+long lectura; // Lectura en el pin analógico A2
+float Tension_de_trabajo = 5.0; // VCC 
+float Voltaje_R2; // Valor que calculamos
+float Resistencia; // Valor que calculamos
+float Angulo; // Valor del ángulo calculado
+
+float lectura_A0;
+float volt_A0;
+float irradiancia_A0;
+
+float lectura_A1;
+float volt_A1;
+float irradiancia_A1;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
+}
+
+void loop() {
+  // Lecturas y cálculos para el primer conjunto de sensores DS18S20
+  for (int i = 0; i < numSensors; i++) {
+    float temperature = getTemp(i);
+  }
+
+  // Lecturas y cálculos para el segundo conjunto de código
+  lectura = 0;
+  for (int i = 0; i < 5; i++) {
+    lectura += analogRead(Pin_de_medicion);
+  }
+  lectura = trunc(lectura / 5);
+
+  // Calculamos el voltaje en la resistencia desconocida en el pin A2
+  Voltaje_R2 = (Tension_de_trabajo / 1023.0) * lectura;
+
+  // Calculamos la resistencia desconocida con las fórmulas
+  Resistencia = R1 * Voltaje_R2 / (Tension_de_trabajo - Voltaje_R2);
+
+  // Limita la resistencia a un máximo de 20k ohmios
+  if (Resistencia > 23000.0) {
+    Resistencia = 23000.0;
+  }
+
+  // Mapea la resistencia al rango de 0 a 360 grados
+  Angulo = map(Resistencia, 0, 23000, 0, 360);
+
+  // Lecturas y cálculos para el tercer conjunto de código
+  lectura_A0 = analogRead(A0);
+  volt_A0 = lectura_A0 * (3.0 / 1023.0);
+  irradiancia_A0 = map(volt_A0 * 1000, 0, 3000, 0, 1800);
+
+  lectura_A1 = analogRead(A1);
+  volt_A1 = lectura_A1 * (3.0 / 1023.0);
+  irradiancia_A1 = map(volt_A1 * 1000, 0, 3000, 0, 1800);
+
+  delay(6000); // Retraso de 60 segundos antes de la próxima lectura
+
+  // Serial.print al final en el orden deseado
+  Serial.print(irradiancia_A0);// piranometro 1 panel fv
+  Serial.print(",");
+  Serial.print(irradiancia_A1);
+  Serial.print(",");
+  Serial.println(Angulo);
+  Serial.print(",");
+  for (int i = 0; i < numSensors; i++) {
+    float temperature = getTemp(i);
+    Serial.print(i + 1);
+    Serial.println(temperature);
+    Serial.println(); 
+     // Envía los datos a la computadora
+}
+}
+
+float getTemp(int sensorIndex) {
+  // Resto del código para la lectura de la temperatura de los sensores DS18S20
+}
