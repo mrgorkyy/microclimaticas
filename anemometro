@@ -1,0 +1,47 @@
+// Definir el pin al que está conectado el anemómetro
+const int pinAnemometro = 2;  // Ajusta el número del pin según tu configuración
+
+// Variables para el cálculo de la velocidad del viento
+volatile unsigned int pulsos = 0;
+unsigned long tiempoAnterior = 0;
+float velocidadMPS = 0.0; // Velocidad en metros por segundo
+float velocidadKPS = 0.0; // Velocidad en kilómetros por segundo
+
+void contarPulsos() {
+  pulsos++;
+}
+
+void setup() {
+  // Inicializar el pin del anemómetro como entrada
+  pinMode(pinAnemometro, INPUT);
+
+  // Adjuntar la interrupción al pin del anemómetro
+  attachInterrupt(digitalPinToInterrupt(pinAnemometro), contarPulsos, FALLING);
+
+  // Inicializar la comunicación serial a 9600 bps
+  Serial.begin(9600);
+}
+
+void loop() {
+  // Medir el tiempo transcurrido desde la última lectura
+  unsigned long tiempoActual = millis();
+  unsigned long tiempoTranscurrido = tiempoActual - tiempoAnterior;
+
+  // Calcular la velocidad del viento cada minuto (60000 milisegundos)
+  if (tiempoTranscurrido >= 60000) {
+    // Calcular la velocidad en metros por segundo usando la fórmula proporcionada
+    // y convertir a kilómetros por segundo dividiendo entre 1000.
+    float factorConversion = 1600.0 / (2.25 * 60.0) * 0.44704;
+    velocidadMPS = (pulsos * factorConversion) / 302.4;
+    velocidadKPS = velocidadMPS / 1000.0; // Convertir a kilómetros por segundo
+
+    // Mostrar la velocidad del viento en la consola
+    Serial.print("Velocidad del viento: ");
+    Serial.print(velocidadKPS, 5);  // Muestra cinco decimales
+    Serial.println(" m/s");
+
+    // Reiniciar las variables para la siguiente medición
+    pulsos = 0;
+    tiempoAnterior = tiempoActual;
+  }
+}
