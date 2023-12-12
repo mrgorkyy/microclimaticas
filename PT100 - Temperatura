@@ -1,62 +1,109 @@
 #include <OneWire.h>
 
-// Define los pines para los sensores DS18S20
-int DS18S20_Pins[] = {2, 3, 4};
+const int NUM_SENSORS = 3;
+int DS18S20_Pins[NUM_SENSORS] = {3, 4, 5};
+OneWire ds[NUM_SENSORS] = {OneWire(DS18S20_Pins[0]), OneWire(DS18S20_Pins[1]), OneWire(DS18S20_Pins[2])};
 
-// Número de sensores
-int numSensors = sizeof(DS18S20_Pins) / sizeof(DS18S20_Pins[0]);
+float temperatures[NUM_SENSORS]; // Arreglo para almacenar las temperaturas
 
-// Arreglo de instancias de OneWire para cada sensor
-OneWire ds[] = {OneWire(DS18S20_Pins[0]), OneWire(DS18S20_Pins[1]), OneWire(DS18S20_Pins[2])};
+float lectura_A0;
+float volt_A0;
+float irradiancia_A0;
 
-void setup(void) {
+float lectura_A1;
+float volt_A1;
+float irradiancia_A1;
+
+int Pin_de_medicion = A2;
+int R1 = 10000;
+long lectura;
+float Tension_de_trabajo = 5.0;
+float Voltaje_R2;
+float Resistencia;
+float Angulo;
+
+void setup() {
   Serial.begin(9600);
+  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
 }
 
-void loop(void) {
-  for (int i = 0; i < numSensors; i++) {
-    float temperature = getTemp(i);
-    Serial.print("Sensor ");
-    Serial.print(i + 1);
-    Serial.print(": ");
-    Serial.println(temperature);
+void loop() {
+  // Lecturas de temperatura (almacenadas pero no impresas todavía)
+  for (int i = 0; i < NUM_SENSORS; i++) {
+    temperatures[i] = getTemp(i);
   }
 
-  delay(60000); // Solo para ralentizar la salida y hacerla más fácil de leer
+  // Realizar cálculos de irradiancia y ángulo
+  lectura_A0 = analogRead(A0);
+  volt_A0 = lectura_A0 * (5.0 / 1023.0);
+  irradiancia_A0 = map(volt_A0 * 1000, 0, 3000, 0, 1800);
+
+  lectura_A1 = analogRead(A1);
+  volt_A1 = lectura_A1 * (5.0 / 1023.0);
+  irradiancia_A1 = map(volt_A1 * 1000, 0, 3000, 0, 1800);
+
+  lectura = 0;
+  for (int i = 0; i < 5; i++) {
+    lectura += analogRead(Pin_de_medicion);
+  }
+  lectura = trunc(lectura / 5);
+
+  Voltaje_R2 = (Tension_de_trabajo / 1023.0) * lectura;
+  Resistencia = R1 * Voltaje_R2 / (Tension_de_trabajo - Voltaje_R2);
+
+  if (Resistencia > 23000.0) {
+    Resistencia = 23000.0;
+  }
+
+  Angulo = map(Resistencia, 0, 23000, 0, 360);
+
+  // Imprimir valores de irradiancia y ángulo
+  
+  Serial.print(irradiancia_A0);
+  Serial.print(",");
+  Serial.print(irradiancia_A1);
+  Serial.print(",");
+  Serial.print("3");
+  Serial.print(",");
+  Serial.print(Angulo);
+
+  // Imprimir temperaturas al final
+  for (int i = 0; i < NUM_SENSORS; i++) {
+    Serial.print(",");
+    Serial.print(temperatures[i]);
+  }
+  Serial.println();
+
+  delay(60000); // Retraso de 60 segundos antes de la próxima lectura
 }
 
 float getTemp(int sensorIndex) {
-  // Devuelve la temperatura de un DS18S20 en grados Celsius
-
   byte data[12];
   byte addr[8];
 
   if (!ds[sensorIndex].search(addr)) {
-    // No hay más sensores en la cadena, reinicia la búsqueda
-    //Serial.println("No hay más sensores en la cadena, reinicia la búsqueda");
     ds[sensorIndex].reset_search();
     return -1000;
   }
 
   if (OneWire::crc8(addr, 7) != addr[7]) {
-    Serial.println("CRC no es válido!");
     return -1000;
   }
 
   if (addr[0] != 0x10 && addr[0] != 0x28) {
-    Serial.print("El dispositivo no es reconocido");
     return -1000;
   }
 
   ds[sensorIndex].reset();
   ds[sensorIndex].select(addr);
-  ds[sensorIndex].write(0x44, 1); // Iniciar la conversión, con alimentación parásita al final
+  ds[sensorIndex].write(0x44, 1);
 
   byte present = ds[sensorIndex].reset();
   ds[sensorIndex].select(addr);
-  ds[sensorIndex].write(0xBE); // Leer Scratchpad
+  ds[sensorIndex].write(0xBE);
 
-  for (int i = 0; i < 9; i++) { // Necesitamos 9 bytes
+  for (int i = 0; i < 9; i++) {
     data[i] = ds[sensorIndex].read();
   }
 
@@ -65,7 +112,7 @@ float getTemp(int sensorIndex) {
   byte MSB = data[1];
   byte LSB = data[0];
 
-  float tempRead = ((MSB << 8) | LSB); // Usando complemento a dos
+  float tempRead = ((MSB << 8) | LSB);
   float TemperatureSum = tempRead / 16;
 
   return TemperatureSum;
