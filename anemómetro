@@ -33,12 +33,12 @@ void loop() {
     // y convertir a kilómetros por segundo dividiendo entre 1000.
     float factorConversion = 1600.0 / (2.25 * 60.0) * 0.44704;
     velocidadMPS = (pulsos * factorConversion) / 302.4;
-    velocidadKPS = velocidadMPS / 1000.0; // Convertir a kilómetros por segundo
+    velocidadKPS = velocidadMPS / 1000.0; // ajuste de datos 
 
     // Mostrar la velocidad del viento en la consola
-    Serial.print("Velocidad del viento: ");
-    Serial.print(velocidadKPS, 5);  // Muestra cinco decimales
-    Serial.println(" m/s");
+    //Serial.print("Velocidad del viento: ");
+    Serial.print(velocidadKPS, 3);  // Muestra tres decimales
+   // Serial.println(" m/s");
 
     // Reiniciar las variables para la siguiente medición
     pulsos = 0;
